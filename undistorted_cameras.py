@@ -51,6 +51,14 @@ fps = cap_left.get(cv2.CAP_PROP_FPS)
 fourcc = cv2.VideoWriter_fourcc(*'MJPG')
 out = cv2.VideoWriter(output_video, fourcc, fps, (frame_width, frame_height))
 
+def get_pixel(event, x, y, flags, param):
+    if event == cv2.EVENT_LBUTTONDOWN:
+        # Print the pixel value and its origin (Left or Central)
+        if param == 'left':
+            print(f"Left Camera: [{x}, {y}]")
+        elif param == 'central':
+            print(f"Central Camera: [{x}, {y}]")
+
 while True:
     #reading cameras
     ret_left, frame_left = cap_left.read()
@@ -74,12 +82,15 @@ while True:
     out.write(left)
     
     # combine cameras
-    top_row = np.hstack((left, central, right))
-    cv2.imshow("CameraVideo", top_row)
+    #top_row = np.hstack((left, central, right))
+    #cv2.imshow("CameraVideo", top_row)
     
     cv2.imshow("Left", undistorted_left_frame)
     cv2.imshow("Right", undistorted_right_frame)
     cv2.imshow("Central", undistorted_central_frame)
+    
+    cv2.setMouseCallback("Left", get_pixel, 'left')
+    cv2.setMouseCallback("Central", get_pixel, 'central')
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break

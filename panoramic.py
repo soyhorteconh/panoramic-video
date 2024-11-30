@@ -28,9 +28,9 @@ cap_right = cv2.VideoCapture(right_input_video)
 
 # Define homographies 
 H_left_to_center = np.array([
-    [ 1.01944564e+00, -2.05097698e-02,  4.33431508e+00],
-    [-7.38908483e-03,  9.31372542e-01, -2.05331435e+02+250],
-    [ 1.70922113e-04, -1.22451361e-04,  1.00000000e+00]
+    [ 1.01980091e+00,  7.31958059e-03, -2.62779709e+00],
+    [-7.89500927e-03,  9.42679590e-01, -2.08025126e+02 +250],
+    [ 1.63501591e-04, -1.00068629e-04,  1.00000000e+00]
     
 ])
 
@@ -62,7 +62,7 @@ while True:
     #undistorted_right = cv2.undistort(frame_right, right_camera_matrix, right_dist_coeffs, None, new_right_camera_matrix)
 
     # # Apply homographies to align the frames
-    left_warped = cv2.warpPerspective(undistorted_left, H_left_to_center, (640, 620))
+    left_warped = cv2.warpPerspective(undistorted_left, H_left_to_center, (640, 1080))
     # right_warped = cv2.warpPerspective(undistorted_right, H_right_to_center, (640, 360))
     # cv2.imshow('left_warped', left_warped)
     
@@ -74,9 +74,9 @@ while True:
     
     left_copy = left.copy()
     
-    cv2.imshow('left_2', left_2)
+    cv2.imshow('left_2', left)
     
-    start_x = 254 
+    start_x = 250
     end_x = start_x + central.shape[1]
     end_y = central.shape[0]
     
@@ -95,7 +95,7 @@ while True:
   
 
     #cv2.imshow('Panorama', panorama)
-    #cv2.imshow('central', central)
+    cv2.imshow('central', central)
 
     
     
