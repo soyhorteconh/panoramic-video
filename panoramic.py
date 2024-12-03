@@ -28,23 +28,21 @@ cap_right = cv2.VideoCapture(right_input_video)
 
 # Define homographies 
 H_left_to_center = np.array([
-    [ 1.01980091e+00,  7.31958059e-03, -2.62779709e+00],
-    [-7.89500927e-03,  9.42679590e-01, -2.08025126e+02 +250],
-    [ 1.63501591e-04, -1.00068629e-04,  1.00000000e+00]
-    
+    [1.01980091, 7.31958059e-03, -2.62779709],
+    [-7.89500927e-03, 9.42679590e-01, -208.025126 + 250],
+    [1.63501591e-04, -1.00068629e-04, 1.0]
 ])
 
-# H_right_to_center = np.array([
-#     [ 4.15241115e-01, -2.48649566e+00, 2.36765639e+02],
-#     [-1.56746520e-01, -3.38485352e-01, 2.76727052e+02],
-#     [-5.22221094e-04, -2.56142215e-03, 1.00000000e+00]
-# ])
-
+H_right_to_center = np.array([
+    [1.02845693, 7.66146089e-03, -3.15966250],
+    [2.81709251e-02, 1.08613596e+00, 231.720455 - 245],
+    [2.94507790e-05, 1.90601076e-04, 1.0]
+])
 
 # New camera matrix for undistortion
-new_left_camera_matrix, roi = cv2.getOptimalNewCameraMatrix(left_camera_matrix, left_dist_coeffs, (640, 360), 1, (640, 360))
-new_right_camera_matrix, roi = cv2.getOptimalNewCameraMatrix(right_camera_matrix, right_dist_coeffs, (640, 360), 1, (640, 360))
-new_central_camera_matrix, roi = cv2.getOptimalNewCameraMatrix(central_camera_matrix, central_dist_coeffs, (640, 360), 1, (640, 360))
+new_left_camera_matrix, _ = cv2.getOptimalNewCameraMatrix(left_camera_matrix, left_dist_coeffs, (640, 360), 1, (640, 360))
+new_right_camera_matrix, _ = cv2.getOptimalNewCameraMatrix(right_camera_matrix, right_dist_coeffs, (640, 360), 1, (640, 360))
+new_central_camera_matrix, _ = cv2.getOptimalNewCameraMatrix(central_camera_matrix, central_dist_coeffs, (640, 360), 1, (640, 360))
 
 while True:
     # Reading frames from the cameras
@@ -56,49 +54,38 @@ while True:
         print("Error: Cannot read video stream")
         break
     
-    # Undistort the frames
+    # Apply undistortion to the frames
     undistorted_left = cv2.undistort(frame_left, left_camera_matrix, left_dist_coeffs, None, new_left_camera_matrix)
     undistorted_central = cv2.undistort(frame_central, central_camera_matrix, central_dist_coeffs, None, new_central_camera_matrix)
-    #undistorted_right = cv2.undistort(frame_right, right_camera_matrix, right_dist_coeffs, None, new_right_camera_matrix)
+    undistorted_right = cv2.undistort(frame_right, right_camera_matrix, right_dist_coeffs, None, new_right_camera_matrix)
 
-    # # Apply homographies to align the frames
+    # Apply homographies to align the frames
     left_warped = cv2.warpPerspective(undistorted_left, H_left_to_center, (640, 1080))
-    # right_warped = cv2.warpPerspective(undistorted_right, H_right_to_center, (640, 360))
-    # cv2.imshow('left_warped', left_warped)
-    
-    
-    #rotate cameras
-    left_2 = cv2.flip(cv2.rotate(undistorted_left, cv2.ROTATE_90_CLOCKWISE),1)
-    left = cv2.flip(cv2.rotate(left_warped, cv2.ROTATE_90_CLOCKWISE),1)
-    central = cv2.flip(cv2.rotate(undistorted_central, cv2.ROTATE_90_CLOCKWISE), 1)
-    
-    left_copy = left.copy()
-    
-    cv2.imshow('left_2', left)
-    
-    start_x = 250
-    end_x = start_x + central.shape[1]
-    end_y = central.shape[0]
-    
-    roi = left[0:end_y, start_x:end_x]
+    right_warped = cv2.warpPerspective(undistorted_right, H_right_to_center, (640, 360))
 
-    alpha = 0.0
-    beta = 1
-    blended_region = cv2.addWeighted(roi, alpha, central, beta, 0)
-    left[0:end_y, start_x:end_x] = blended_region
+    # Flip and rotate the frames only once per iteration
+    # left = cv2.flip(cv2.rotate(left_warped, cv2.ROTATE_90_CLOCKWISE), 1)
+    # right = cv2.flip(cv2.rotate(right_warped, cv2.ROTATE_90_CLOCKWISE), 1)
+    # central = cv2.flip(cv2.rotate(undistorted_central, cv2.ROTATE_90_CLOCKWISE), 1)
     
-    mask_black = np.all(left == [0, 0, 0], axis=-1)
-    left[mask_black] = left_copy[mask_black]
+    left_copy = left_warped.copy()
     
-    #cv2.imshow('left', left_copy)
-    cv2.imshow("Imagen combinada", left)
-  
+    # Combine sections into the final image
+    left_warped[250:250 + undistorted_central.shape[0], 0:undistorted_central.shape[1]] = cv2.addWeighted(
+        left_warped[250:250 + undistorted_central.shape[0], 0:undistorted_central.shape[1]], 0.0, undistorted_central, 1.0, 0)
+    
+    left_copy2 = left_warped.copy()
 
-    #cv2.imshow('Panorama', panorama)
-    cv2.imshow('central', central)
-
+    left_warped[493:493 + undistorted_right.shape[0], 0:undistorted_right.shape[1]] = cv2.addWeighted(
+        left_warped[493:493 + undistorted_right.shape[0], 0:undistorted_right.shape[1]], 0.0, undistorted_right, 1.0, 0)
     
+    mask_black = np.all(left_warped == [0, 0, 0], axis=-1)
+    left_warped[mask_black] = left_copy[mask_black]
     
+    mask_black = np.all(left_warped == [0, 0, 0], axis=-1)
+    left_warped[mask_black] = left_copy2[mask_black]
+    
+    cv2.imshow("Imagen combinada", left_warped)
 
     # Break the loop on pressing 'q'
     if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -108,5 +95,4 @@ while True:
 cap_left.release()
 cap_central.release()
 cap_right.release()
-#out.release()
 cv2.destroyAllWindows()
