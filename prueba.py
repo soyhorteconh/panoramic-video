@@ -57,5 +57,3 @@ thread1 = CamThread("Central camera", "rtsps://192.168.1.1:7441/SvXhKj5l4PfiSp5g
 #thread1 = CamThread("Right camera", "rtsps://192.168.1.1:7441/qn0SqiLM0NR1OADS?enableSrtp")
 thread1.start()
 
-# check out tutorials point link below for multi-threading sample
-# https://www.tutorialspoint.com/python/python_multithreading.htm
